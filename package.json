@@ -1,0 +1,20 @@
+{
+  "name": "nodeaulas",
+  "version": "0.0.1",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "nodemon",
+    "build": "tsc index.ts",
+    "start": "node index.js"
+  },
+  "author": "Andre Ferreira",
+  "license": "MIT",
+  "description": "",
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
