@@ -2,19 +2,22 @@ import * as WebSocket from "ws";
 import { v4 as uuidv4 } from 'uuid';
 import { ByteBuffer } from "./lib/bytebuffer";
 import { ConcurrentByteBufferPool } from "./lib/concurrentpool";
+import { QueueBuffer } from "./lib/queuebuffer";
 
 const port = 3001;
 const clients = new Map<string, any>();
 const server = new WebSocket.Server({ port, host: "0.0.0.0" });
 
-server.on('connection', (socket) => {
+server.on('connection', (socket: any) => {
     const id = uuidv4();
     sendPacket(socket, packetSession(id));
+    socket.id = id;
     clients.set(id, socket);
+    QueueBuffer.addSocket(id, socket);
 
     console.log(`Player connected ${id}`);
 
-    socket.on('message', (data) => {
+    socket.on('message', (data: any) => {
         const message = new ByteBuffer(ByteBuffer.toArrayBuffer(data));
         const encrypted = message.getByte();
         const type = message.getByte();
@@ -29,10 +32,14 @@ server.on('connection', (socket) => {
                 if(sessionId)
                     broadcast(packetMove(sessionId, { x, y, z }), id);                
             break;
+            case 1: //Jump
+                broadcast(packetJump(socket.id), socket.id);   
+            break;
         }
     });
 
     socket.on('close', () => {
+        QueueBuffer.removeSocket(id);
         clients.delete(id);
         console.log(`Player disconnected ${id}`);
     });
@@ -48,6 +55,7 @@ function sendPacket(socket: any, packet: ByteBuffer){
 function broadcast(message: ByteBuffer, id: string){
     clients.forEach((client, idSocket) => {
         if(idSocket !== id)
+            //QueueBuffer.addBuffer(id, message);
             client.send(message.getBuffer());
     });
 
@@ -75,6 +83,13 @@ function packetMove(id: string, positon: { x: number, y: number, z: number }){
     buffer.putInt32(positon.x);
     buffer.putInt32(positon.y);
     buffer.putInt32(positon.z);
+    return buffer;
+}
+
+function packetJump(id: string){
+    let buffer = ConcurrentByteBufferPool.acquire();
+    buffer.putByte(3);
+    buffer.putString(id);
     return buffer;
 }
 

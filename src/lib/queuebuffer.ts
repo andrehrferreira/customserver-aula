@@ -1,7 +1,7 @@
 import { ByteBuffer } from "./bytebuffer";
 
-const ServerPacketQueue = 0x20;
-const MapUpdateTick = 0.2;
+const ServerPacketQueue = 4;
+const MapUpdateTick = 0.1;
 
 export class QueueBuffer {
     private static queues: Map<string, ByteBuffer[]> = new Map();
