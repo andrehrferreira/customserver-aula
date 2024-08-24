@@ -5,7 +5,7 @@ import { ConcurrentByteBufferPool } from "./lib/concurrentpool";
 
 const port = 3001;
 const clients = new Map<string, any>();
-const server = new WebSocket.Server({ port });
+const server = new WebSocket.Server({ port, host: "0.0.0.0" });
 
 server.on('connection', (socket) => {
     const id = uuidv4();
@@ -14,16 +14,21 @@ server.on('connection', (socket) => {
 
     console.log(`Player connected ${id}`);
 
-    socket.on('message', (message) => {
-        const [sessionId, position] = message.toString('utf-8').split("|");
-        const [x,y,z] = position.split(",");
+    socket.on('message', (data) => {
+        const message = new ByteBuffer(ByteBuffer.toArrayBuffer(data));
+        const encrypted = message.getByte();
+        const type = message.getByte();
 
-        if(sessionId){
-            broadcast(packetMove(sessionId, { 
-                x: parseInt(x), 
-                y: parseInt(y), 
-                z: parseInt(z) 
-            }), id);
+        switch(type){
+            case 0: //Move
+                const sessionId = message.getString();
+                const x = message.getInt32();
+                const y = message.getInt32();
+                const z = message.getInt32();
+
+                if(sessionId)
+                    broadcast(packetMove(sessionId, { x, y, z }), id);                
+            break;
         }
     });
 
